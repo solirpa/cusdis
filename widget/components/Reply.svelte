@@ -1,0 +1,138 @@
+<script>
+  import { getContext } from "svelte";
+import { t } from "../i18n";
+  export let parentId;
+
+  // form data
+  let content = "";
+  let nickname = "";
+  let email = "";
+
+  let loading = false;
+
+  export let onSuccess;
+
+  const api = getContext("api");
+  const setMessage = getContext('setMessage')
+  const { appId, pageId, pageUrl, pageTitle } = getContext("attrs");
+  const refresh = getContext("refresh");
+
+  async function addComment() {
+    if (!content) {
+      alert(t('content_is_required'));
+      return;
+    }
+
+    if (!nickname) {
+      alert(t('nickname_is_required'));
+      return;
+    }
+
+    try {
+      loading = true;
+      const res = await api.post("/api/open/comments", {
+        appId,
+        pageId,
+        content,
+        nickname,
+        email,
+        parentId,
+        pageUrl,
+        pageTitle,
+      });
+      await refresh();
+      teardown();
+      setMessage(t('comment_has_been_sent'))
+    } finally {
+      loading = false;
+    }
+  }
+
+  function teardown() {
+    content = "";
+    nickname = "";
+    email = "";
+    onSuccess && onSuccess();
+  }
+</script>
+
+<div style="margin-top: 1em;">
+  <div class="cusdis-reply-info cusdis-field">
+    <div>
+      <input type="text" placeholder={t('nickname')} bind:value={nickname} />
+    </div>
+    <div>
+      <input type="text" placeholder={t('email')} bind:value={email} />
+    </div>
+  </div>
+
+  <div class="cusdis-field">
+    <textarea bind:value={content} placeholder={t('reply_placeholder')} />
+  </div>
+
+  <div class="cusdis-field">
+    <button cusdis-disabled={loading} class="submit-btn" class:cusdis-disabled={loading} on:click={addComment}>{ loading ? t('sending') : t('post_comment') }</button>
+  </div>
+</div>
+
+<style>
+  textarea,
+  input {
+    width: 100%;
+    border: 2px solid #ddd;
+    padding: 0.5em;
+    border-radius: 4px;
+    outline: none;
+    font-family: inherit;
+    box-sizing: border-box;
+    font-size: 1em;
+  }
+
+  textarea {
+    height: 5em;
+    outline: none;
+  }
+
+  .cusdis-disabled {
+    background-color: rgba(0, 0, 0, .5);
+    cursor: not-allowed;
+  }
+
+  .cusdis-reply-info {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-column-gap: 0.5em;
+  }
+
+  @media only screen and (max-width: 767px) {
+    .cusdis-reply-info {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      grid-row-gap: 0.5em;
+    }
+  }
+
+  .submit-btn {
+    background-color: #ddd;
+    border: 0px;
+    color: rgba(0, 0, 0, 0.8);
+    border-radius: 0;
+    padding: 0.5em 1em;
+    cursor: pointer;
+    border-radius: 2px;
+    font-family: inherit;
+    font-size: 1em;
+    word-spacing: normal;
+    text-transform: none;
+    text-indent: 0;
+    text-shadow: none;
+    font: inherit;
+    font-weight: bold;
+    align-items: center;
+  }
+
+  .cusdis-field {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+  }
+</style>
